@@ -1,0 +1,564 @@
+---
+title: "MA615 Shiny Assignment"
+author: "Jin Wen Lin"
+format: html
+editor: visual
+---
+
+```{r}
+# load the package
+library(shiny)
+```
+
+
+
+## Task 1  
+
+Notice that Hadley_2 includes reactive expression using the package Shiny and Hadley_1 does not. This is indicating that Hadley_2 with UI and servers are more organized, interact, and efficient.  
+
+## Task 2  
+
+### Section 2.3.5  
+
+#### Question 1  
+
+textOutput() is paired with renderText(). As a result, it pair with (b) and (d).  
+
+verbatimTextOutput is paired with renderPrint(). Therefore, it pair with (a) and (c).  
+
+#### Question 2  
+
+```{r}
+ui <- fluidPage(
+  # height 300px, width 700px
+  plotOutput("plot", height = "300px", width = "700px"), 
+  textOutput("text")
+)
+server <- function(input, output, session) {
+  # code from 2.3.3
+  output$plot <- renderPlot(plot(1:5), res = 96)
+  # Text for explain the scatterplot
+  output$text <- renderText("scatterplot of five random numbers")
+}
+shinyApp(ui, server)
+```
+
+#### Question 3  
+
+```{r}
+ui <- fluidPage(
+  DT::DTOutput("table")
+)
+#> `shiny::dataTableOutput()` is deprecated as of shiny 1.8.1.
+#> Please use `DT::DTOutput()` instead.
+#> See <https://rstudio.github.io/DT/shiny.html> for more information.
+server <- function(input, output, session) {
+  output$table <- DT::renderDataTable(mtcars, 
+                                  options = list(dom = 't', 
+                                                 ordering = FALSE, 
+                                                 searching = FALSE, 
+                                                 pageLength = 5))
+}
+shinyApp(ui, server)
+```
+
+#### Question 4  
+
+```{r}
+# load the package reactable
+library(reactable)
+
+# same code as question 3
+ui <- fluidPage(
+  DT::DTOutput("table")
+)
+#> `shiny::dataTableOutput()` is deprecated as of shiny 1.8.1.
+#> Please use `DT::DTOutput()` instead.
+#> See <https://rstudio.github.io/DT/shiny.html> for more information.
+server <- function(input, output, session) {
+  output$table <- DT::renderDataTable(mtcars, 
+                                  options = list(dom = 't', 
+                                                 ordering = FALSE, 
+                                                 searching = FALSE, 
+                                                 pageLength = 5))
+}
+shinyApp(ui, server)
+```
+### Section 3.3.6  
+
+#### Question 1  
+
+```{r}
+ui <- fluidPage(
+  textInput("name", "What's your name?"),
+  textOutput("greeting")
+)
+
+# Fix code 1
+## change the "server" to "session" in the function
+server1 <- function(input, output, session) {
+  # Should be output$greeting here, not input$greeting
+  output$greeting <- renderText({ #add the curly brackets here
+    paste0("Hello ", input$name) # change name to input$name
+  })
+}
+shinyApp(ui, server1)
+```
+
+```{r}
+ui <- fluidPage(
+  textInput("name", "What's your name?"),
+  textOutput("greeting")
+)
+
+# Fix code 2
+## Again, change the "server" to "session" in the function
+server2 <- function(input, output, session) {
+  output$greeting <- renderText({ # delete the line of greeting and add 
+                                  # curly brackets here
+    paste0("Hello ", input$name)
+  })
+}
+shinyApp(ui, server2)
+```
+```{r}
+ui <- fluidPage(
+  textInput("name", "What's your name?"),
+  textOutput("greeting")
+)
+
+# Fix code 3 
+
+## Again, change the "server" to "session" in the function
+server3 <- function(input, output, session) {
+  # spelling error: change output$greting to output$greeting
+  output$greeting <- renderText({ # add the renderText function here to pair 
+                                  # with textOutput
+    paste0("Hello ", input$name) # Add a space after "Hello"
+  })
+}
+shinyApp(ui, server3)
+```
+
+All the changes are described in the comments for each code.  
+
+#### Question 2  
+
+```{r}
+ui <- fluidPage(
+  numericInput("a", "a", value = 10),
+  numericInput("b", "b", value = 1),
+  numericInput("c", "c", value = 1),
+  textOutput("f")
+)
+
+server1 <- function(input, output, session) {
+  c <- reactive(input$a + input$b)
+  e <- reactive(c() + input$d)
+  output$f <- renderText(e())
+}
+server2 <- function(input, output, session) {
+  x <- reactive(input$x1 + input$x2 + input$x3)
+  y <- reactive(input$y1 + input$y2)
+  output$z <- renderText(x() / y())
+}
+server3 <- function(input, output, session) {
+  d <- reactive(c() ^ input$d)
+  a <- reactive(input$a * 10)
+  c <- reactive(b() / input$c)
+  b <- reactive(a() + input$b)
+}
+```
+
+
+```{r}
+# Load the DiagrammeR package
+library(DiagrammeR)
+
+# Reactive graph for server 1
+graph <- "
+digraph {
+  # Node shape
+  node [shape=box]
+  
+  # nodes from server 1
+  a [label='input: a']
+  b [label='input: b']
+  c [label='c']
+  d [label='input: d']
+  e [label='e']
+  f [label='output: f']
+  
+  # paths
+  a -> c
+  b -> c
+  c -> e
+  d -> e
+  e -> f
+}
+"
+
+# reactive graph
+grViz(graph)
+
+```
+
+
+```{r}
+# Reactive graph for server 2
+graph_2 <- "
+digraph G {
+  # Node shape
+  node [shape=box]
+  
+  # nodes from the server
+  x1 [label='input: x1']
+  x2 [label='input: x2']
+  x3 [label='input: x3']
+  y1 [label='input: y1']
+  y2 [label='input: y2']
+  x [label='x']
+  y [label='y']
+  z [label='output: z']
+  
+  # paths
+  x1 -> x
+  x2 -> x
+  x3 -> x
+  y1 -> y
+  y2 -> y
+  x -> z 
+  y -> z
+}
+"
+
+# reactive graph
+grViz(graph_2)
+```
+
+
+```{r}
+# Reactive graph for server 3
+graph_3 <- "
+digraph G {
+  # Node shape
+  node [shape=box]
+  
+  # nodes from the server
+  input_a [label='input: a']
+  input_b [label='input: b']
+  input_c [label='input: c']
+  input_d [label='input: d']
+  a [label='a']
+  b [label='b']
+  c [label='c']
+  d [label='d']
+  
+  # paths
+  input_a -> a
+  a -> b
+  input_b -> b
+  b -> c
+  input_c -> c
+  c -> d
+  input_d -> d
+}
+"
+
+# reactive graph
+grViz(graph_3)
+```
+
+
+##### Question 3  
+
+Notice that the variable names var and range have have the same naming with the functions var() and range() where var() calculates the variance of a vector and range() returns the maximum and the minimum value of a vector. Since both var and range are reactive expressions, then it will be mixed up with the same naming functions, hence cause confusions.  
+
+### Section 4.8  
+
+#### Question 1  
+
+Reactive Graph for 4.4 Prototype:  
+
+```{r}
+# graph for 4.4 prototype
+ prototype <- "
+digraph G {
+  # Node shape
+  node [shape=box]
+  
+  # nodes from the server
+  code [label='input: code']
+  selected [label='selected']
+  summary [label='summary']
+  diag [label='output: diag']
+  body_part [label='output: body part']
+  location [label='output: location']
+  age_sex [label='output: age_sex']
+  
+  # paths
+  code -> selected
+  selected -> diag
+  selected -> body_part
+  selected -> location
+  selected -> summary
+  summary -> age_sex
+}
+"
+
+# reactive graph
+grViz(prototype)
+```
+
+Reactive Graph for 4.5 Polish Table  
+
+```{r}
+# graph for 4.5 polish table
+ polish <- "
+digraph  {
+  # Nodes
+  input_code [label='input_code: Selected product code', shape=box]
+  selected [label='selected(): Filters injuries by the selected product code', shape=ellipse]
+  count_diag [label='count_top(selected(), diag)', shape=ellipse]
+  count_body_part [label='count_top(selected(), body_part)', shape=ellipse]
+  count_location [label='count_top(selected(), location)', shape=ellipse]
+  summary [label='summary(): Summarizes the data by age, sex, and calculates rates', shape=ellipse]
+  output_diag [label='output$diag: Table of top diagnoses', shape=box]
+  output_body_part [label='output$body_part: Table of top body parts', shape=box]
+  output_location [label='output$location: Table of top locations', shape=box]
+  output_age_sex [label='output$age_sex: Plot of estimated number of injuries', shape=box]
+  
+  # Paths
+  input_code -> selected
+  selected -> count_diag
+  selected -> count_body_part
+  selected -> count_location
+  selected -> summary
+  count_diag -> output_diag
+  count_body_part -> output_body_part
+  count_location -> output_location
+  summary -> output_age_sex
+}
+}
+"
+
+# reactive graph
+grViz(polish)
+```
+
+
+#### Question 2  
+
+If we flip fct_infreq() and fct_lump(), the result will be changed. The function fct_lump() will first reduce the number of factors, and the least frequent levels will become other. Then, fct_infreq() will reorder the levels according to the frequency. The most frequent one is the first and the least frequent become the last. On the other hand, the process is reversed, which might lead to different results.
+
+#### Question 3 
+
+```{r}
+# download data
+dir.create("neiss")
+#> Warning in dir.create("neiss"): 'neiss' already exists
+download <- function(name) {
+  url <- "https://raw.github.com/hadley/mastering-shiny/main/neiss/"
+  download.file(paste0(url, name), paste0("neiss/", name), quiet = TRUE)
+}
+download("injuries.tsv.gz")
+download("population.tsv")
+download("products.tsv")
+```
+
+
+
+```{r}
+library(shiny)
+library(vroom)
+library(tidyverse)
+library(forcats)
+
+# Load the data (update file paths as needed)
+injuries <- vroom::vroom("neiss/injuries.tsv.gz")
+population <- vroom::vroom("neiss/population.tsv")
+products <- vroom::vroom("neiss/products.tsv")
+
+prod_codes <- setNames(products$prod_code, products$title)
+
+count_top <- function(df, var, n = 5) {
+  df %>%
+    mutate({{ var }} := fct_lump(fct_infreq({{ var }}), n = n)) %>%
+    group_by({{ var }}) %>%
+    summarise(n = as.integer(sum(weight)))
+}
+
+# Define the UI
+ui <- fluidPage(
+  # Input row for product selection and number of rows to display
+  fluidRow(
+    column(6, 
+      selectInput("code", "Product", choices = prod_codes)
+    ),
+    column(6, 
+      numericInput("num_rows", "Number of rows to display:", value = 5, min = 1, max = 20)
+    )
+  ),
+  # Summary tables
+  fluidRow(
+    column(4, tableOutput("diag")),
+    column(4, tableOutput("body_part")),
+    column(4, tableOutput("location"))
+  ),
+  # Plot
+  fluidRow(
+    column(12, plotOutput("age_sex"))
+  )
+)
+
+# Define the server
+server <- function(input, output, session) {
+  
+  # Filter injuries based on the selected product code
+  selected <- reactive({
+    injuries %>% filter(prod_code == input$code)
+  })
+  
+  # Function to truncate tables dynamically based on user input
+  count_top <- function(df, var, n) {
+    df %>%
+      mutate({{ var }} := fct_lump(fct_infreq({{ var }}), n = n)) %>%
+      group_by({{ var }}) %>%
+      summarise(n = as.integer(sum(weight))) %>%
+      arrange(desc(n))
+  }
+  
+  # Render summary tables dynamically
+  output$diag <- renderTable({
+    count_top(selected(), diag, input$num_rows)
+  }, width = "100%")
+  
+  output$body_part <- renderTable({
+    count_top(selected(), body_part, input$num_rows)
+  }, width = "100%")
+  
+  output$location <- renderTable({
+    count_top(selected(), location, input$num_rows)
+  }, width = "100%")
+  
+  # Summarize data for the plot
+  summary <- reactive({
+    selected() %>%
+      count(age, sex, wt = weight) %>%
+      left_join(population, by = c("age", "sex")) %>%
+      mutate(rate = n / population * 1e4)
+  })
+  
+  # Render the plot
+  output$age_sex <- renderPlot({
+    summary() %>%
+      ggplot(aes(age, n, colour = sex)) +
+      geom_line() +
+      labs(y = "Estimated number of injuries")
+  }, res = 96)
+}
+
+# Run the app
+shinyApp(ui, server)
+```
+
+#### Question 4  
+
+
+```{r}
+# codes from the book
+ui <- fluidPage(
+  #<< first-row
+  fluidRow(
+    column(8,
+      selectInput("code", "Product",
+        choices = setNames(products$prod_code, products$title),
+        width = "100%"
+      )
+    ),
+    column(2, selectInput("y", "Y axis", c("rate", "count")))
+  ),
+  #>>
+  fluidRow(
+    column(4, tableOutput("diag")),
+    column(4, tableOutput("body_part")),
+    column(4, tableOutput("location"))
+  ),
+  fluidRow(
+    column(12, plotOutput("age_sex"))
+  ),
+  #<< narrative-ui with buttons
+  fluidRow(
+    column(1, actionButton("prev_story", "Previous")),
+    column(1, actionButton("next_story", "Next")),
+    column(10, textOutput("narrative"))
+  )
+  #>>
+)
+
+server <- function(input, output, session) {
+  selected <- reactive(injuries %>% filter(prod_code == input$code))
+
+  #<< tables
+  output$diag <- renderTable(count_top(selected(), diag), width = "100%")
+  output$body_part <- renderTable(count_top(selected(), body_part), width = "100%")
+  output$location <- renderTable(count_top(selected(), location), width = "100%")
+  #>>
+
+  summary <- reactive({
+    selected() %>%
+      count(age, sex, wt = weight) %>%
+      left_join(population, by = c("age", "sex")) %>%
+      mutate(rate = n / population * 1e4)
+  })
+
+  #<< plot
+  output$age_sex <- renderPlot({
+    if (input$y == "count") {
+      summary() %>%
+        ggplot(aes(age, n, colour = sex)) +
+        geom_line() +
+        labs(y = "Estimated number of injuries")
+    } else {
+      summary() %>%
+        ggplot(aes(age, rate, colour = sex)) +
+        geom_line(na.rm = TRUE) +
+        labs(y = "Injuries per 10,000 people")
+    }
+  }, res = 96)
+  #>>
+
+  #<< narrative-server with step navigation
+  narrative_list <- reactive({
+    selected() %>% pull(narrative)
+  })
+
+  current_index <- reactiveVal(1)
+
+  # Display narrative at current index
+  output$narrative <- renderText({
+    if (length(narrative_list()) > 0) {
+      narrative_list()[current_index()]
+    } else {
+      "No narratives available."
+    }
+  })
+
+  # Next button
+  observeEvent(input$next_story, {
+    new_index <- min(current_index() + 1, length(narrative_list()))
+    current_index(new_index)
+  })
+
+  # Previous button
+  observeEvent(input$prev_story, {
+    new_index <- max(current_index() - 1, 1)
+    current_index(new_index)
+  })
+  #>>
+}
+
+shinyApp(ui, server)
+
+```
+
